@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HydroTrack - Daily Water Tracker</title>
+    <title>HydroTrack - Advanced Water Tracker</title>
     <style>
         :root {
             --primary: #0284c7;
@@ -14,6 +14,8 @@
             --card-bg: #ffffff;
             --bg: #f8fafc;
             --border: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
             --radius: 16px;
         }
 
@@ -73,7 +75,7 @@
         .bottle-wrapper {
             position: relative;
             width: 140px;
-            height: 240px;
+            height: 220px;
             border: 4px solid var(--primary);
             border-radius: 20px 20px 30px 30px;
             overflow: hidden;
@@ -96,25 +98,30 @@
             transform: translate(-50%, -50%);
             text-align: center;
             z-index: 2;
-            font-weight: bold;
-            text-shadow: 0 0 4px rgba(255,255,255,0.8);
+            width: 100%;
+            padding: 0 10px;
         }
 
         .percentage {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
+            font-weight: bold;
             color: var(--text-main);
+            text-shadow: 0 0 4px rgba(255,255,255,0.9);
         }
 
         .current-amount {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
+            font-weight: 600;
+            text-shadow: 0 0 4px rgba(255,255,255,0.9);
         }
 
-        /* Quick Add Controls */
+        /* Controls Grid */
         .controls-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .btn-quick {
@@ -122,15 +129,16 @@
             color: var(--primary);
             border: 1px solid var(--primary-light);
             border-radius: 12px;
-            padding: 12px 8px;
-            font-size: 0.9rem;
+            padding: 10px 6px;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
+            position: relative;
         }
 
         .btn-quick:hover {
@@ -138,22 +146,34 @@
             color: white;
         }
 
-        .custom-input-group {
+        .btn-quick .delete-preset {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 0.7rem;
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        .btn-quick .delete-preset:hover { opacity: 1; }
+
+        .action-row {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
         }
 
-        input[type="number"] {
+        input[type="number"], input[type="text"] {
             flex: 1;
             padding: 10px 12px;
             border: 1px solid var(--border);
             border-radius: 10px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             outline: none;
         }
 
-        input[type="number"]:focus {
+        input:focus {
             border-color: var(--primary);
         }
 
@@ -167,7 +187,18 @@
             cursor: pointer;
         }
 
-        /* Goal & Reset Row */
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* Settings & History */
         .settings-row {
             display: flex;
             justify-content: space-between;
@@ -178,15 +209,14 @@
         .btn-text {
             background: none;
             border: none;
-            color: #ef4444;
+            color: var(--danger);
             cursor: pointer;
             font-size: 0.85rem;
         }
 
-        /* History Log */
         .log-list {
             list-style: none;
-            max-height: 160px;
+            max-height: 180px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -197,10 +227,65 @@
         .log-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 8px 12px;
             background: var(--bg);
             border-radius: 8px;
             font-size: 0.85rem;
+        }
+
+        .log-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        .btn-icon:hover { opacity: 1; }
+
+        /* Calendar Heatmap Section */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            background: var(--border);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .cal-day.achieved {
+            background: var(--success);
+            color: white;
+        }
+
+        .cal-day.partial {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
@@ -224,42 +309,44 @@
 
     <!-- Controls Card -->
     <div class="card">
-        <div class="controls-grid">
-            <button class="btn-quick" onclick="addWater(250)">
-                <span>🥛 Glass</span>
-                <span>+250 ml</span>
-            </button>
-            <button class="btn-quick" onclick="addWater(500)">
-                <span>🍾 Bottle</span>
-                <span>+500 ml</span>
-            </button>
-            <button class="btn-quick" onclick="addWater(750)">
-                <span>🏺 Flask</span>
-                <span>+750 ml</span>
-            </button>
+        <div class="section-title">Quick Log & Custom Sizes</div>
+        <div class="controls-grid" id="presetsGrid">
+            <!-- Dynamically injected preset buttons -->
         </div>
 
-        <div class="custom-input-group">
-            <input type="number" id="customInput" placeholder="Custom amount (ml)" min="1">
+        <div class="action-row" style="margin-bottom: 8px;">
+            <input type="number" id="customInput" placeholder="Amount (ml)" min="1">
             <button class="btn-primary" onclick="addCustomWater()">Add</button>
+        </div>
+        <div class="action-row">
+            <input type="text" id="presetNameInput" placeholder="Preset name (e.g. Mug)">
+            <input type="number" id="presetAmountInput" placeholder="ml" min="1" style="max-width: 90px;">
+            <button class="btn-secondary" onclick="addCustomPreset()">Save Preset</button>
         </div>
     </div>
 
-    <!-- Settings & Log Card -->
+    <!-- Today's Log Card -->
     <div class="card">
         <div class="settings-row">
+            <div style="font-weight: 600;">Today's Log</div>
             <div>
-                <strong>Daily Goal:</strong> 
-                <span id="goalText">2500 ml</span>
-                <button class="btn-text" style="color:var(--primary); margin-left:6px;" onclick="editGoal()">Edit</button>
+                <span style="font-size: 0.85rem; color:var(--text-muted);">Goal: <span id="goalText">2500</span>ml</span>
+                <button class="btn-text" style="color:var(--primary); margin-left:8px;" onclick="editGoal()">Edit</button>
             </div>
-            <button class="btn-text" onclick="resetDay()">Reset Day</button>
         </div>
-
-        <hr style="border: none; border-top: 1px solid var(--border); margin: 12px 0;">
-
-        <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;">Today's Log</div>
         <ul class="log-list" id="logList"></ul>
+        <div style="margin-top: 12px; text-align: right;">
+            <button class="btn-text" onclick="resetDay()">Reset Today</button>
+        </div>
+    </div>
+
+    <!-- Calendar History Card -->
+    <div class="card">
+        <div class="section-title">
+            <span>Past 28 Days Record</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">🟢 Goal Met | 🔵 Partial</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
     </div>
 </div>
 
@@ -267,31 +354,56 @@
     let currentIntake = 0;
     let dailyGoal = 2500;
     let logs = [];
+    let historyRecords = {}; // Format: {"YYYY-MM-DD": totalMl}
+    let presets = [
+        { name: "Glass", amount: 250, default: true },
+        { name: "Bottle", amount: 500, default: true },
+        { name: "Flask", amount: 750, default: true }
+    ];
 
-    // Load saved data on startup
+    const todayStr = new Date().toISOString().split('T')[0];
+
     window.onload = function() {
-        const savedData = localStorage.getItem('hydrotrack_data');
-        if (savedData) {
-            const parsed = JSON.parse(savedData);
-            currentIntake = parsed.currentIntake || 0;
+        const saved = localStorage.getItem('hydrotrack_advanced_data');
+        if (saved) {
+            const parsed = JSON.parse(saved);
             dailyGoal = parsed.dailyGoal || 2500;
-            logs = parsed.logs || [];
+            historyRecords = parsed.historyRecords || {};
+            
+            // Check if stored data is for today, otherwise archive yesterday and reset
+            let lastActiveDate = parsed.lastActiveDate;
+            if (lastActiveDate !== todayStr) {
+                if (lastActiveDate && parsed.currentIntake > 0) {
+                    historyRecords[lastActiveDate] = parsed.currentIntake;
+                }
+                currentIntake = 0;
+                logs = [];
+            } else {
+                currentIntake = parsed.currentIntake || 0;
+                logs = parsed.logs || [];
+            }
+
+            if (parsed.presets) presets = parsed.presets;
         }
         updateUI();
     };
 
     function saveData() {
-        localStorage.setItem('hydrotrack_data', JSON.stringify({
+        historyRecords[todayStr] = currentIntake;
+        localStorage.setItem('hydrotrack_advanced_data', JSON.stringify({
             currentIntake,
             dailyGoal,
-            logs
+            logs,
+            historyRecords,
+            presets,
+            lastActiveDate: todayStr
         }));
     }
 
     function addWater(amount) {
         currentIntake += amount;
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        logs.unshift({ amount, time: timeStr });
+        logs.unshift({ id: Date.now(), amount, time: timeStr });
         saveData();
         updateUI();
     }
@@ -305,6 +417,65 @@
         }
     }
 
+    function deleteLog(id) {
+        const item = logs.find(l => l.id === id);
+        if (item) {
+            currentIntake = Math.max(0, currentIntake - item.amount);
+            logs = logs.filter(l => l.id !== id);
+            saveData();
+            updateUI();
+        }
+    }
+
+    function editLog(id) {
+        const item = logs.find(l => l.id === id);
+        if (!item) return;
+        const newAmt = prompt('Edit amount in ml:', item.amount);
+        if (newAmt && !isNaN(newAmt) && parseInt(newAmt) > 0) {
+            const diff = parseInt(newAmt) - item.amount;
+            currentIntake = Math.max(0, currentIntake + diff);
+            item.amount = parseInt(newAmt);
+            saveData();
+            updateUI();
+        }
+    }
+
+    function addCustomPreset() {
+        const nameInput = document.getElementById('presetNameInput');
+        const amountInput = document.getElementById('presetAmountInput');
+        const name = nameInput.value.trim();
+        const amount = parseInt(amountInput.value);
+
+        if (name && amount && amount > 0) {
+            presets.push({ name, amount, default: false });
+            nameInput.value = '';
+            amountInput.value = '';
+            saveData();
+            renderPresets();
+        } else {
+            alert('Please enter a valid name and ml amount.');
+        }
+    }
+
+    function deletePreset(index) {
+        presets.splice(index, 1);
+        saveData();
+        renderPresets();
+    }
+
+    function renderPresets() {
+        const grid = document.getElementById('presetsGrid');
+        grid.innerHTML = '';
+        presets.forEach((p, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-quick';
+            let deleteBtnHTML = p.default ? '' : `<button class="delete-preset" onclick="event.stopPropagation(); deletePreset(${idx})">✕</button>`;
+            btn.innerHTML = `${deleteBtnHTML}<span>${p.name}</span><span>+${p.amount} ml</span>`;
+            btn.onclick = () => addWater(p.amount);
+            grid.appendChild(btn);
+        });
+    }
+
     function editGoal() {
         const newGoal = prompt('Enter your new daily goal in ml:', dailyGoal);
         if (newGoal && !isNaN(newGoal) && newGoal > 0) {
@@ -315,7 +486,7 @@
     }
 
     function resetDay() {
-        if (confirm('Are you sure you want to clear today\'s intake history?')) {
+        if (confirm('Are you sure you want to clear today\'s logs?')) {
             currentIntake = 0;
             logs = [];
             saveData();
@@ -323,30 +494,68 @@
         }
     }
 
+    function renderCalendar() {
+        const calGrid = document.getElementById('calendarGrid');
+        calGrid.innerHTML = '';
+
+        // Generate past 28 days
+        for (let i = 27; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const dayNum = d.getDate();
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'cal-day';
+            dayDiv.innerText = dayNum;
+
+            const intake = historyRecords[dateStr] || 0;
+            if (intake >= dailyGoal) {
+                dayDiv.classList.add('achieved');
+                dayDiv.title = `${dateStr}: Met goal (${intake}ml)`;
+            } else if (intake > 0) {
+                dayDiv.classList.add('partial');
+                dayDiv.title = `${dateStr}: Partial (${intake}ml)`;
+            } else {
+                dayDiv.title = `${dateStr}: No records`;
+            }
+
+            calGrid.appendChild(dayDiv);
+        }
+    }
+
     function updateUI() {
-        // Percentage calculation
         const percent = Math.min(Math.round((currentIntake / dailyGoal) * 100), 100);
         
-        // Update Fill and Text
         document.getElementById('waterFill').style.height = `${percent}%`;
         document.getElementById('percentText').innerText = `${percent}%`;
         document.getElementById('amountText').innerText = `${currentIntake} / ${dailyGoal} ml`;
-        document.getElementById('goalText').innerText = `${dailyGoal} ml`;
+        document.getElementById('goalText').innerText = dailyGoal;
+
+        renderPresets();
 
         // Render Log List
         const listEl = document.getElementById('logList');
         listEl.innerHTML = '';
         
         if (logs.length === 0) {
-            listEl.innerHTML = '<li class="log-item" style="color:var(--text-muted);">No entries yet today.</li>';
+            listEl.innerHTML = '<li class="log-item" style="color:var(--text-muted); justify-content:center;">No entries yet today.</li>';
         } else {
             logs.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'log-item';
-                li.innerHTML = `<span>+${item.amount} ml</span><span>${item.time}</span>`;
+                li.innerHTML = `
+                    <span><b>+${item.amount} ml</b> <span style="color:var(--text-muted); font-size:0.75rem; margin-left:6px;">${item.time}</span></span>
+                    <div class="log-actions">
+                        <button class="btn-icon" onclick="editLog(${item.id})" title="Edit">✏️</button>
+                        <button class="btn-icon" onclick="deleteLog(${item.id})" title="Delete">🗑️</button>
+                    </div>
+                `;
                 listEl.appendChild(li);
             });
         }
+
+        renderCalendar();
     }
 </script>
 
